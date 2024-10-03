@@ -1,0 +1,446 @@
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.stream.Collectors;
+
+
+interface Searchable {
+    boolean matches(String query);
+}
+
+enum VehicleType {
+    CAR, TRUCK, BUS
+}
+
+
+enum VehicleStatus {
+    IN_USE, REPAIR, FREE
+}
+
+
+abstract class Vehicle implements Searchable {
+    private String brand;
+    private String model;
+    private int year;
+    private String registrationNumber;
+    private VehicleStatus status;
+    private VehicleType type;
+    private LocalDate assignmentDate;
+    private LocalDate releaseDate;
+    private double mileage;
+
+    public Vehicle(String brand, String model, int year, String registrationNumber, VehicleType type) {
+        this.brand = brand;
+        this.model = model;
+        this.year = year;
+        this.registrationNumber = registrationNumber;
+        this.type = type;
+        this.status = VehicleStatus.FREE;
+    }
+
+    @Override
+    public boolean matches(String query) {
+        return brand.contains(query) || model.contains(query) || registrationNumber.contains(query);
+    }
+
+    public abstract void calculateFuelConsumption(double distance);
+
+    public void assign() {
+        this.status = VehicleStatus.IN_USE;
+        this.assignmentDate = LocalDate.now();
+    }
+
+    public void release() {
+        this.status = VehicleStatus.FREE;
+        this.releaseDate = LocalDate.now();
+    }
+
+    public void addMileage(double distance) {
+        this.mileage += distance;
+    }
+
+    @Override
+    public String toString() {
+        return "Vehicle{" +
+                "brand='" + brand + '\'' +
+                ", model='" + model + '\'' +
+                ", year=" + year +
+                ", registrationNumber='" + registrationNumber + '\'' +
+                ", status=" + status +
+                ", type=" + type +
+                ", assignmentDate=" + assignmentDate +
+                ", releaseDate=" + releaseDate +
+                ", mileage=" + mileage +
+                '}';
+    }
+
+
+    public VehicleStatus getStatus() {
+        return status;
+    }
+
+    public String getRegistrationNumber() {
+        return registrationNumber;
+    }
+
+    public VehicleType getType() {
+        return type;
+    }
+}
+
+
+class Car extends Vehicle {
+    public Car(String brand, String model, int year, String registrationNumber) {
+        super(brand, model, year, registrationNumber, VehicleType.CAR);
+    }
+
+    @Override
+    public void calculateFuelConsumption(double distance) {
+
+    }
+}
+
+
+class Truck extends Vehicle {
+    public Truck(String brand, String model, int year, String registrationNumber) {
+        super(brand, model, year, registrationNumber, VehicleType.TRUCK);
+    }
+
+    @Override
+    public void calculateFuelConsumption(double distance) {
+
+    }
+}
+
+
+class Bus extends Vehicle {
+    public Bus(String brand, String model, int year, String registrationNumber) {
+        super(brand, model, year, registrationNumber, VehicleType.BUS);
+    }
+
+    @Override
+    public void calculateFuelConsumption(double distance) {
+
+    }
+}
+
+abstract class Driver implements Searchable {
+    private String firstName;
+    private String lastName;
+    private LocalDate birthDate;
+    private String licenseNumber;
+    private List<String> drivingCategories;
+    private Vehicle assignedVehicle;
+
+    public Driver(String firstName, String lastName, LocalDate birthDate, String licenseNumber, List<String> drivingCategories) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.birthDate = birthDate;
+        this.licenseNumber = licenseNumber;
+        this.drivingCategories = drivingCategories;
+    }
+
+    @Override
+    public boolean matches(String query) {
+        return firstName.contains(query) || lastName.contains(query) || licenseNumber.contains(query);
+    }
+
+    public void assignVehicle(Vehicle vehicle) throws Exception {
+        if (vehicle.getStatus() != VehicleStatus.FREE) {
+            throw new Exception("Vehicle is not free");
+        }
+        if (!drivingCategories.contains(vehicle.getType().toString())) {
+            throw new Exception("Driver does not have the required driving category");
+        }
+        this.assignedVehicle = vehicle;
+        vehicle.assign();
+    }
+
+    public void releaseVehicle() {
+        if (assignedVehicle != null) {
+            assignedVehicle.release();
+            assignedVehicle = null;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Driver{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", birthDate=" + birthDate +
+                ", licenseNumber='" + licenseNumber + '\'' +
+                ", drivingCategories=" + drivingCategories +
+                ", assignedVehicle=" + (assignedVehicle != null ? assignedVehicle.getRegistrationNumber() : "None") +
+                '}';
+    }
+
+    public String getRegistrationNumber() {
+        return assignedVehicle != null ? assignedVehicle.getRegistrationNumber() : "None";
+    }
+}
+
+
+class CarDriver extends Driver {
+    public CarDriver(String firstName, String lastName, LocalDate birthDate, String licenseNumber, List<String> drivingCategories) {
+        super(firstName, lastName, birthDate, licenseNumber, drivingCategories);
+    }
+}
+
+class TruckDriver extends Driver {
+    public TruckDriver(String firstName, String lastName, LocalDate birthDate, String licenseNumber, List<String> drivingCategories) {
+        super(firstName, lastName, birthDate, licenseNumber, drivingCategories);
+    }
+}
+
+
+class AutoparkManagementSystem {
+    private List<Vehicle> vehicles;
+    private List<Driver> drivers;
+
+    public AutoparkManagementSystem() {
+        vehicles = new ArrayList<>();
+        drivers = new ArrayList<>();
+    }
+
+    public void addVehicle(Vehicle vehicle) {
+        vehicles.add(vehicle);
+    }
+
+    public void removeVehicle(Vehicle vehicle) {
+        vehicles.remove(vehicle);
+    }
+
+    public void addDriver(Driver driver) {
+        drivers.add(driver);
+    }
+
+    public void removeDriver(Driver driver) {
+        drivers.remove(driver);
+    }
+
+    public List<Vehicle> searchVehicles(String query) {
+        return vehicles.stream().filter(v -> v.matches(query)).collect(Collectors.toList());
+    }
+
+    public List<Driver> searchDrivers(String query) {
+        return drivers.stream().filter(d -> d.matches(query)).collect(Collectors.toList());
+    }
+
+    public void assignVehicleToDriver(Vehicle vehicle, Driver driver) throws Exception {
+        driver.assignVehicle(vehicle);
+    }
+
+    public void releaseVehicle(Driver driver) {
+        driver.releaseVehicle();
+    }
+
+    public List<Vehicle> getVehicles() {
+        return vehicles;
+    }
+
+    public List<Driver> getDrivers() {
+        return drivers;
+    }
+}
+
+
+public class Main {
+    private static AutoparkManagementSystem system = new AutoparkManagementSystem();
+    private static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("1. Add Vehicle");
+            System.out.println("2. Remove Vehicle");
+            System.out.println("3. Add Driver");
+            System.out.println("4. Remove Driver");
+            System.out.println("5. Search Vehicles");
+            System.out.println("6. Search Drivers");
+            System.out.println("7. Assign Vehicle to Driver");
+            System.out.println("8. Release Vehicle from Driver");
+            System.out.println("9. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    addVehicle();
+                    break;
+                case 2:
+                    removeVehicle();
+                    break;
+                case 3:
+                    addDriver();
+                    break;
+                case 4:
+                    removeDriver();
+                    break;
+                case 5:
+                    searchVehicles();
+                    break;
+                case 6:
+                    searchDrivers();
+                    break;
+                case 7:
+                    assignVehicleToDriver();
+                    break;
+                case 8:
+                    releaseVehicleFromDriver();
+                    break;
+                case 9:
+                    System.exit(0);
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void addVehicle() {
+        System.out.print("Enter brand: ");
+        String brand = scanner.nextLine();
+        System.out.print("Enter model: ");
+        String model = scanner.nextLine();
+        System.out.print("Enter year: ");
+        int year = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        System.out.print("Enter registration number: ");
+        String registrationNumber = scanner.nextLine();
+        System.out.print("Enter vehicle type (CAR, TRUCK, BUS): ");
+        VehicleType type = VehicleType.valueOf(scanner.nextLine().toUpperCase());
+
+        Vehicle vehicle;
+        switch (type) {
+            case CAR:
+                vehicle = new Car(brand, model, year, registrationNumber);
+                break;
+            case TRUCK:
+                vehicle = new Truck(brand, model, year, registrationNumber);
+                break;
+            case BUS:
+                vehicle = new Bus(brand, model, year, registrationNumber);
+                break;
+            default:
+                System.out.println("Invalid vehicle type.");
+                return;
+        }
+
+        system.addVehicle(vehicle);
+        System.out.println("Vehicle added successfully.");
+    }
+
+    private static void removeVehicle() {
+        System.out.print("Enter registration number of the vehicle to remove: ");
+        String registrationNumber = scanner.nextLine();
+        Vehicle vehicle = system.getVehicles().stream()
+                .filter(v -> v.getRegistrationNumber().equals(registrationNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (vehicle != null) {
+            system.removeVehicle(vehicle);
+            System.out.println("Vehicle removed successfully.");
+        } else {
+            System.out.println("Vehicle not found.");
+        }
+    }
+
+    private static void addDriver() {
+        System.out.print("Enter first name: ");
+        String firstName = scanner.nextLine();
+        System.out.print("Enter last name: ");
+        String lastName = scanner.nextLine();
+        System.out.print("Enter birth date (YYYY-MM-DD): ");
+        LocalDate birthDate = LocalDate.parse(scanner.nextLine());
+        System.out.print("Enter license number: ");
+        String licenseNumber = scanner.nextLine();
+        System.out.print("Enter driving categories (comma separated): ");
+        List<String> drivingCategories = List.of(scanner.nextLine().split(","));
+
+        Driver driver = new CarDriver(firstName, lastName, birthDate, licenseNumber, drivingCategories);
+        system.addDriver(driver);
+        System.out.println("Driver added successfully.");
+    }
+
+    private static void removeDriver() {
+        System.out.print("Enter license number of the driver to remove: ");
+        String licenseNumber = scanner.nextLine();
+        Driver driver = system.getDrivers().stream()
+                .filter(d -> d.matches(licenseNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (driver != null) {
+            system.removeDriver(driver);
+            System.out.println("Driver removed successfully.");
+        } else {
+            System.out.println("Driver not found.");
+        }
+    }
+
+    private static void searchVehicles() {
+        System.out.print("Enter search query: ");
+        String query = scanner.nextLine();
+        List<Vehicle> foundVehicles = system.searchVehicles(query);
+        foundVehicles.forEach(System.out::println);
+    }
+
+    private static void searchDrivers() {
+        System.out.print("Enter search query: ");
+        String query = scanner.nextLine();
+        List<Driver> foundDrivers = system.searchDrivers(query);
+        foundDrivers.forEach(System.out::println);
+    }
+
+    private static void assignVehicleToDriver() {
+        System.out.print("Enter registration number of the vehicle: ");
+        String registrationNumber = scanner.nextLine();
+        Vehicle vehicle = system.getVehicles().stream()
+                .filter(v -> v.getRegistrationNumber().equals(registrationNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (vehicle == null) {
+            System.out.println("Vehicle not found.");
+            return;
+        }
+
+        System.out.print("Enter license number of the driver: ");
+        String licenseNumber = scanner.nextLine();
+        Driver driver = system.getDrivers().stream()
+                .filter(d -> d.matches(licenseNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (driver == null) {
+            System.out.println("Driver not found.");
+            return;
+        }
+
+        try {
+            system.assignVehicleToDriver(vehicle, driver);
+            System.out.println("Vehicle assigned to driver successfully.");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static void releaseVehicleFromDriver() {
+        System.out.print("Enter license number of the driver: ");
+        String licenseNumber = scanner.nextLine();
+        Driver driver = system.getDrivers().stream()
+                .filter(d -> d.matches(licenseNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (driver == null) {
+            System.out.println("Driver not found.");
+            return;
+        }
+
+        system.releaseVehicle(driver);
+        System.out.println("Vehicle released from driver successfully.");
+    }
+}
